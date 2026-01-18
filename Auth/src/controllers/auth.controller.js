@@ -1,6 +1,7 @@
 const userModel = require("../model/user.model");
 const ApiError = require("../Utilities/ApiError");
 const ApiResponse = require("../Utilities/ApiResponse");
+const redis = require('../db/redis')
 
 
 async function registerUser(req, res, next) {
@@ -93,6 +94,14 @@ async function loginUser(req, res, next) {
 
 async function logoutUser(req, res, next) {
   try {
+
+    const token = req.cookies.token;
+
+    if(token){
+      // Blacklisting(redis) whole jwt is wrong -> only blacklist the jti
+      const black = await redis.set(`blacklist : ${token}`,`true`,`EX`,24*60*60)
+    }
+
     res.cookie("token", "", {
       httpOnly: true,
       expires: new Date(0),
