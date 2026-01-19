@@ -34,3 +34,34 @@ next()
 
 
 
+TOKEN (2types)
+= blacklisting token using the rabbitmq
+= create database on redis io => launch instance => add  secrets(port ,host ,passowrd)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

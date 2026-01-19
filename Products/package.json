@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "imagekit": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.4",
+    "multer": "^2.0.2",
+    "uuid": "^13.0.0"
+  },
+  "name": "products",
+  "version": "1.0.0",
+  "description": "how to upload image on imagekit =>  npm install imagekit uuid\r require imagekit\r install uuid\r provide all secrets => publickey ,privatekey,IMAGEKIT_URL_ENDPOINTs\r create uploadFile function",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
+  }
+}
