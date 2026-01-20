@@ -1,8 +1,8 @@
 const express = require("express");
-const errorHandler = require('./middlewares/errorHandler')
+const errorHandler = require('./middleware/errorHandler')
 const cors = require('cors')
 const cookieParser = require('cookie-parser');
-const productRouter = require('./routes/product.route')
+const cartRouter = require('./routes/cart.route')
 
 
 const app = express();
@@ -14,7 +14,7 @@ app.use(cookieParser())
 
 
 
-app.use('/api/products',productRouter)
+app.use('/api/cart',cartRouter)
 
 app.use(errorHandler)
 
