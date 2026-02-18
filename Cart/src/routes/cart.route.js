@@ -20,6 +20,6 @@ router.patch(
   cartController.updateProductQuantity,
 )
 router.delete("/items/:productId",createAuthMiddleware(["user"]), cartController.removeCartItem)
-router.delete("/",createAuthMiddleware(["user"]), cartController.deleteCart)
+router.delete("/clear",createAuthMiddleware(["user"]), cartController.deleteCart)
 
 module.exports = router;

@@ -114,7 +114,6 @@ async function removeCartItem(req, res, next) {
   }
 }
 
-
 async function deleteCart(req, res, next) {
   try {
     const userId = req.user._id;
