@@ -42,13 +42,32 @@ TOKEN (2types)
 
 
 
+how to use langChain
+- install @langchain/langgraph @langchain/core @langchain/google-genai zod axios
+- replacement of google gen ai => openAi
+- REPLCEMENT OF OPEN AI => ollama pull llama3
 
 
 
+langGraph 
+ start=> chat => tool => end
+ start=> chat => end
+ chat=> tool=> end
+ chat=> tool=> chat=>    => end
 
 
+notifiaction service  => queue(holds all request.eg.user register ,user login)  =>   email servicce
+
+payment service  => queue(holds all request.eg.user register ,user login)  =>   email servicce
 
 
+queue genrated by RabbitMQ
+
+RabbitMq => used to coomunicate two services to each other(Genrating the queue)
+-> it provide only one service free => 
+=> cloudMQP => creeate instance => get the url => save in .env file(RABBIT_URL)
+=> AMQPlib => install => src/broker/broker.js => crete connect function(connect to server) => export connection,connect func,channel
+=> crete to func => publishToQuetion(push msg in queue)  or 
 
 
 
