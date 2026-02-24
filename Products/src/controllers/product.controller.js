@@ -4,34 +4,43 @@ const ApiResponse = require("../Utilities/ApiResponse");
 const ApiError = require("../Utilities/ApiError");
 const mongoose = require("mongoose");
 
+/**
+ * RULE:
+ * - All prices are stored in PAISA (smallest unit).
+ * - Currency is fixed to INR.
+ */
+
 async function createProduct(req, res, next) {
   try {
-    const { title, description, priceAmount, priceCurrency = "INR" } = req.body;
+    const { title, description, priceAmount } = req.body;
     const seller = req.user._id;
 
-    const price = {
-      amount: Number(priceAmount),
-      currency: priceCurrency,
-    };
+    if (!priceAmount || isNaN(priceAmount)) {
+      throw new ApiError(400, "Valid priceAmount is required");
+    }
 
-    // Promise.all => used for async operations of multipart-form-data
+    const amountInPaise = Math.round(Number(priceAmount) * 100);
+
     const images = await Promise.all(
-      (req.files || []).map((file) => uploadImage({ buffer: file.buffer })),
+      (req.files || []).map((file) =>
+        uploadImage({ buffer: file.buffer })
+      )
     );
 
     const product = await productModel.create({
       title,
       description,
-      price,
+      price: {
+        amount: amountInPaise, // stored in paise
+        currency: "INR",
+      },
       images,
       seller,
     });
 
-    return res
-      .status(201)
-      .json(
-        new ApiResponse(201, "Product created successfully", { data: product }),
-      );
+    return res.status(201).json(
+      new ApiResponse(201, "Product created successfully", product)
+    );
   } catch (error) {
     next(error);
   }
@@ -39,7 +48,7 @@ async function createProduct(req, res, next) {
 
 async function getProducts(req, res, next) {
   try {
-    const { q, minPrice, maxPrice, limit = 10, skip } = req.query;
+    const { q, minPrice, maxPrice, limit = 10, skip = 0 } = req.query;
 
     const filter = {};
 
@@ -47,22 +56,20 @@ async function getProducts(req, res, next) {
       filter.$text = { $search: q };
     }
 
-    // 'price.amount' : its key not code
     if (minPrice) {
       filter["price.amount"] = {
         ...filter["price.amount"],
-        $gte: Number(minPrice),
+        $gte: Math.round(Number(minPrice) * 100),
       };
     }
 
     if (maxPrice) {
       filter["price.amount"] = {
         ...filter["price.amount"],
-        $lte: Number(maxPrice),
+        $lte: Math.round(Number(maxPrice) * 100),
       };
     }
 
-    // Findout product in model
     const products = await productModel
       .find(filter)
       .skip(Number(skip))
@@ -80,8 +87,6 @@ async function getProductById(req, res, next) {
   try {
     const { id } = req.params;
 
-    if (!id) throw new ApiError(400, "Product id required");
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new ApiError(400, "Invalid product id");
     }
@@ -89,7 +94,7 @@ async function getProductById(req, res, next) {
     const product = await productModel.findById(id);
 
     if (!product) {
-      throw new ApiError(403, "product not fount");
+      throw new ApiError(404, "Product not found");
     }
 
     return res.status(200).json(
@@ -104,49 +109,31 @@ async function updateProductById(req, res, next) {
   try {
     const { id } = req.params;
 
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new ApiError(400, "Invalid product id");
     }
 
     const product = await productModel.findById(id);
+
     if (!product) {
       throw new ApiError(404, "Product not found");
     }
-
 
     if (product.seller.toString() !== req.user._id.toString()) {
       throw new ApiError(403, "You can update only your own product");
     }
 
-    const allowedUpdates = ["title", "description", "price"];
-    let updated = false;
+    const { title, description, priceAmount } = req.body;
 
-    for (const key of Object.keys(req.body)) {
-      if (!allowedUpdates.includes(key)) continue;
+    if (title) product.title = title;
+    if (description) product.description = description;
 
-      if (key === "price") {
-        if (typeof req.body.price !== "object" || req.body.price === null) {
-          throw new ApiError(400, "Price must be an object");
-        }
-
-        if ("amount" in req.body.price) {
-          product.price.amount = Number(req.body.price.amount);
-          updated = true;
-        }
-
-        if ("currency" in req.body.price) {
-          product.price.currency = req.body.price.currency; // ✅ string
-          updated = true;
-        }
-      } else {
-        product[key] = req.body[key];
-        updated = true;
+    if (priceAmount !== undefined) {
+      if (isNaN(priceAmount)) {
+        throw new ApiError(400, "Invalid priceAmount");
       }
-    }
 
-    if (!updated) {
-      throw new ApiError(400, "No valid fields provided for update");
+      product.price.amount = Math.round(Number(priceAmount) * 100);
     }
 
     await product.save();
@@ -159,7 +146,6 @@ async function updateProductById(req, res, next) {
   }
 }
 
-
 async function deleteProductById(req, res, next) {
   try {
     const { id } = req.params;
@@ -170,21 +156,15 @@ async function deleteProductById(req, res, next) {
 
     const product = await productModel.findById(id);
 
-
     if (!product) {
       throw new ApiError(404, "Product not found");
     }
 
     if (product.seller.toString() !== req.user._id.toString()) {
-      throw new ApiError(
-        403,
-        "You can delete only your own product"
-      );
+      throw new ApiError(403, "You can delete only your own product");
     }
 
-
     await productModel.findByIdAndDelete(id);
-
 
     return res.status(200).json(
       new ApiResponse(200, "Product deleted successfully", product)
@@ -194,21 +174,20 @@ async function deleteProductById(req, res, next) {
   }
 }
 
+async function getProductBySeller(req, res, next) {
+  try {
+    const { skip = 0, limit = 20 } = req.query;
 
-async function getProductBySeller(req,res,next){
-   try {
-    const seller = req.user;
-    const { skip = 0, limit = 20 } = req.params;
+    const products = await productModel
+      .find({ seller: req.user.id })
+      .skip(Number(skip))
+      .limit(Math.min(Number(limit), 20));
 
-    const products = await productModel.find({ seller: seller._id }).skip(skip).limit(Math.min(limit, 20));
-
-    if(!products || products.length < 0){
-      throw new ApiError(403,"Product not found")
-    }
-    return res.status(201).json(
-      new ApiResponse(201, "Seller products fetched successfully", products)
+    return res.status(200).json(
+      new ApiResponse(200, "Seller products fetched successfully", products)
     );
   } catch (error) {
+    console.log(error)
     next(error);
   }
 }
@@ -219,7 +198,5 @@ module.exports = {
   getProductById,
   updateProductById,
   deleteProductById,
-  getProductBySeller
+  getProductBySeller,
 };
-
-

@@ -18,10 +18,11 @@ router.post(
 );
 
 router.get("/",productControlller.getProducts)
+router.get("/seller",sellerAuthhMiddleware(["seller"]),productControlller.getProductBySeller)
+
 router.get("/:id",productControlller.getProductById)
 router.patch("/:id",sellerAuthhMiddleware(['seller']),productControlller.updateProductById)
 router.delete("/:id",sellerAuthhMiddleware(["seller"]),productControlller.deleteProductById)
-router.get("/seller/:id",sellerAuthhMiddleware(["seller"]),productControlller.getProductBySeller)
 
 
 module.exports = router;

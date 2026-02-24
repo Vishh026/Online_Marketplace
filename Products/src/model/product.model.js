@@ -7,7 +7,7 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
     description: {
-      type: String
+      type: String,
     },
     price: {
       amount: {
@@ -16,7 +16,7 @@ const productSchema = new mongoose.Schema(
       },
       currency: {
         type: String,
-        enum: ["INR", "USD"],
+        enum: ["INR"],
         default: "INR",
       },
     },
@@ -40,9 +40,7 @@ const productSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-productSchema.index({title: 'text',description: 'text'})
-
-
+productSchema.index({ title: "text", description: "text" });
 
 const productModel = mongoose.model("product", productSchema);
 
