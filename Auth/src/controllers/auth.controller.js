@@ -1,8 +1,9 @@
 const userModel = require("../model/user.model");
 const ApiError = require("../Utilities/ApiError");
 const ApiResponse = require("../Utilities/ApiResponse");
-const redis = require('../db/redis')
-
+const redis = require("../db/redis");
+const { publishToQueue } = require("../broker/broker");
+const QUEUES = require("../constants/queues");
 
 async function registerUser(req, res, next) {
   try {
@@ -34,8 +35,19 @@ async function registerUser(req, res, next) {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    await publishToQueue(QUEUES.USER_REGISTERED, {
+      eventType: "USER_REGISTERED",
+      timestamp: new Date().toISOString(),
+      data: {
+        userId: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     });
 
     return res.status(201).json(
@@ -46,7 +58,7 @@ async function registerUser(req, res, next) {
           email: user.email,
           role: user.role,
         },
-      })
+      }),
     );
   } catch (error) {
     next(error);
@@ -70,12 +82,21 @@ async function loginUser(req, res, next) {
       return next(new ApiError(401, "Invalid credentials"));
     }
 
-    const token = user.getJWT()
+    const token = user.getJWT();
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000,
+    });
+    await publishToQueue(QUEUES.USER_LOGIN, {
+      eventType: "USER_LOGIN",
+      timestamp: new Date().toISOString(),
+      data: {
+        userId: user._id,
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+      },
     });
 
     return res.status(200).json(
@@ -85,7 +106,7 @@ async function loginUser(req, res, next) {
         email: user.email,
         role: user.role,
         address: user.address,
-      })
+      }),
     );
   } catch (error) {
     next(error);
@@ -94,12 +115,16 @@ async function loginUser(req, res, next) {
 
 async function logoutUser(req, res, next) {
   try {
-
     const token = req.cookies.token;
 
-    if(token){
+    if (token) {
       // Blacklisting(redis) whole jwt is wrong -> only blacklist the jti
-      const black = await redis.set(`blacklist : ${token}`,`true`,`EX`,24*60*60)
+      const black = await redis.set(
+        `blacklist : ${token}`,
+        `true`,
+        `EX`,
+        24 * 60 * 60,
+      );
     }
 
     res.cookie("token", "", {
@@ -108,9 +133,9 @@ async function logoutUser(req, res, next) {
       secure: process.env.NODE_ENV === "production",
     });
 
-    return res.status(200).json(
-      new ApiResponse(200, "User logged out successfully")
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "User logged out successfully"));
   } catch (error) {
     next(error);
   }
@@ -121,7 +146,7 @@ async function getCurrentUser(req, res, next) {
     return res.status(200).json(
       new ApiResponse(200, "User fetched successfully", {
         user: req.user,
-      })
+      }),
     );
   } catch (error) {
     next(error);
@@ -130,9 +155,7 @@ async function getCurrentUser(req, res, next) {
 
 async function getUserAddress(req, res, next) {
   try {
-    const user = await userModel
-      .findById(req.user._id)
-      .select("address");
+    const user = await userModel.findById(req.user._id).select("address");
 
     if (!user) {
       return next(new ApiError(404, "User not found"));
@@ -141,7 +164,7 @@ async function getUserAddress(req, res, next) {
     return res.status(200).json(
       new ApiResponse(200, "User address fetched successfully", {
         address: user.address,
-      })
+      }),
     );
   } catch (error) {
     next(error);
@@ -166,7 +189,7 @@ async function addUserAddress(req, res, next) {
           },
         },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!user) {
@@ -176,7 +199,7 @@ async function addUserAddress(req, res, next) {
     return res.status(200).json(
       new ApiResponse(200, "Address added successfully", {
         address: user.address,
-      })
+      }),
     );
   } catch (error) {
     next(error);
@@ -189,16 +212,16 @@ async function deleteUserAddress(req, res, next) {
 
     const result = await userModel.updateOne(
       { _id: req.user._id, "address._id": addressId },
-      { $pull: { address: { _id: addressId } } }
+      { $pull: { address: { _id: addressId } } },
     );
 
     if (result.modifiedCount === 0) {
       return next(new ApiError(404, "Address not found"));
     }
 
-    return res.status(200).json(
-      new ApiResponse(200, "Address deleted successfully")
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Address deleted successfully"));
   } catch (error) {
     next(error);
   }
