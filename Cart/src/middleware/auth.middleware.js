@@ -12,6 +12,7 @@ function createAuthMiddleware(roles = ["user"]) {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("decoded",decoded)
       if(!roles.includes(decoded.role)){
         throw new ApiError(403, "Forbidden: Insufficient permissions");
       }
