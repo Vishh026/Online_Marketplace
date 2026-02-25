@@ -144,6 +144,16 @@ const cancelOrderById = async (req, res, next) => {
     }
 
     order.status = "CANCELLED";
+
+    await publishToQueue(QUEUES.ORDER_CANCELLED, {
+  eventType: "ORDER_CANCELLED",
+  timestamp: new Date().toISOString(),
+  data: {
+    orderId: order._id,
+    userId: order.user,
+    status: order.status,
+  }
+});
     await order.save();
 
     return res

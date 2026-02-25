@@ -12,6 +12,9 @@ app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
+router.get("/", (req, res) => {
+  res.status(200).send("seller service Ruunning...");
+});
 app.use("/api/seller/dashboard", sellerRoutes);
 
 app.use(errorHandler)

@@ -12,7 +12,9 @@ app.use(express.json())
 app.use(cookieParser())
 
 
-
+router.get("/", (req, res) => {
+  res.status(200).send("AI service Ruunning...");
+});
 
 
 app.use(errorHandler)

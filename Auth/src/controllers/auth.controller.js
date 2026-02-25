@@ -41,17 +41,25 @@ async function registerUser(req, res, next) {
 
     await Promise.all([
       publishToQueue(QUEUES.USER_REGISTERED, {
-      eventType: "USER_REGISTERED",
-      timestamp: new Date().toISOString(),
-      data: {
-        userId: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-    }),
-      publishToQueue(QUEUES.SELLER_AUTH_REGISTER,user)
-    ])
+        eventType: "USER_REGISTERED",
+        timestamp: new Date().toISOString(),
+        data: {
+          userId: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      }),
+      publishToQueue(QUEUES.SELLER_AUTH_REGISTER, {
+        eventType: "USER_REGISTERED",
+        data: {
+          userId: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      }),
+    ]);
 
     return res.status(201).json(
       new ApiResponse(201, "User registered successfully", {

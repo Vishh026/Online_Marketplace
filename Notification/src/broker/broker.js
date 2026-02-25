@@ -53,6 +53,8 @@ async function subscribeToQueue(queueName, callback) {
   });
 }
 
+
+
 module.exports = {
   channel,
   connection,

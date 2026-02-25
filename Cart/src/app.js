@@ -12,7 +12,9 @@ app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
-
+router.get("/", (req, res) => {
+  res.status(200).send("cart service Ruunning...");
+});
 
 app.use('/api/cart',cartRouter)
 

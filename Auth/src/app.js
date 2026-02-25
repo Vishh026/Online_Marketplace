@@ -14,7 +14,9 @@ app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
-
+router.get("/", (req, res) => {
+  res.status(200).send("Auth service Ruunning...");
+});
 
 app.use('/api/auth',authRouter)
 app.use('/api/user',userRouter)

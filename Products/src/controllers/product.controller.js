@@ -4,7 +4,7 @@ const ApiResponse = require("../Utilities/ApiResponse");
 const ApiError = require("../Utilities/ApiError");
 const mongoose = require("mongoose");
 const { publishToQueue } = require("../broker/broker");
-const QUEUES = require('../constants/queues')
+const QUEUES = require("../constants/queues");
 /**
  * RULE:
  * - All prices are stored in PAISA (smallest unit).
@@ -23,9 +23,7 @@ async function createProduct(req, res, next) {
     const amountInPaise = Math.round(Number(priceAmount) * 100);
 
     const images = await Promise.all(
-      (req.files || []).map((file) =>
-        uploadImage({ buffer: file.buffer })
-      )
+      (req.files || []).map((file) => uploadImage({ buffer: file.buffer })),
     );
 
     const product = await productModel.create({
@@ -39,11 +37,19 @@ async function createProduct(req, res, next) {
       seller,
     });
 
-    await publishToQueue(QUEUES.SELLER_PRODUCT_CREATED ,product)
+    await publishToQueue(QUEUES.PRODUCT_NOTIFICATION_PRODUCT_CREATED, {
+      email: req.user.email,
+      username: req.user.username,
+      productId: product._id,
+      title: product.title,
+      price: product.price.amount, // paise
+    });
 
-    return res.status(201).json(
-      new ApiResponse(201, "Product created successfully", product)
-    );
+    await publishToQueue(QUEUES.SELLER_DASHBOARD_PRODUCT_CREATED, product);
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, "Product created successfully", product));
   } catch (error) {
     next(error);
   }
@@ -78,9 +84,9 @@ async function getProducts(req, res, next) {
       .skip(Number(skip))
       .limit(Math.min(Number(limit), 20));
 
-    return res.status(200).json(
-      new ApiResponse(200, "Products fetched successfully", products)
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Products fetched successfully", products));
   } catch (error) {
     next(error);
   }
@@ -100,9 +106,9 @@ async function getProductById(req, res, next) {
       throw new ApiError(404, "Product not found");
     }
 
-    return res.status(200).json(
-      new ApiResponse(200, "Product fetched successfully", product)
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Product fetched successfully", product));
   } catch (error) {
     next(error);
   }
@@ -141,9 +147,9 @@ async function updateProductById(req, res, next) {
 
     await product.save();
 
-    return res.status(200).json(
-      new ApiResponse(200, "Product updated successfully", product)
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Product updated successfully", product));
   } catch (error) {
     next(error);
   }
@@ -169,9 +175,9 @@ async function deleteProductById(req, res, next) {
 
     await productModel.findByIdAndDelete(id);
 
-    return res.status(200).json(
-      new ApiResponse(200, "Product deleted successfully", product)
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Product deleted successfully", product));
   } catch (error) {
     next(error);
   }
@@ -186,11 +192,13 @@ async function getProductBySeller(req, res, next) {
       .skip(Number(skip))
       .limit(Math.min(Number(limit), 20));
 
-    return res.status(200).json(
-      new ApiResponse(200, "Seller products fetched successfully", products)
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, "Seller products fetched successfully", products),
+      );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     next(error);
   }
 }

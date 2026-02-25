@@ -12,6 +12,9 @@ app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
+router.get("/", (req, res) => {
+  res.status(200).send("Products service Ruunning...");
+});
 
 
 app.use('/api/products',productRouter)

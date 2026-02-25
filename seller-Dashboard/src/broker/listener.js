@@ -9,7 +9,7 @@ module.exports = async function initSubscriber(){
     subscribeToQueue(QUEUES.SELLER_AUTH_REGISTER,async(user)=> {
         await userModel.create(user)
     }),
-    subscribeToQueue(QUEUES.SELLER_PRODUCT_CREATED ,async(product)=> {
+    subscribeToQueue(QUEUES.SELLER_DASHBOARD_PRODUCT_CREATED ,async(product)=> {
         await productModel.create(product)
     }),
     subscribeToQueue(QUEUES.SELLER_ORDER_CREATED ,async(order)=> {

@@ -1,33 +1,30 @@
-const jwt = require("jsonwebtoken");
-const ApiError = require("../Utilities/ApiError");
+const jwt = require('jsonwebtoken')
+const ApiError = require("../Utilities/ApiError")
 
-function CreateAuthMiddleware(roles = ["user"]){
-  return (req, res, next) => {
+function createAuthMiddleware(roles = ["user"]) {
+  return function authMiddleware(req, res, next) {
     try {
       const token =
         req.cookies?.token || req.headers?.authorization?.split(" ")[1];
 
       if (!token) {
-        return next(new ApiError(401, "Unauthenticated permission"));
+        throw new ApiError(401, "Unauthorized: No token provided");
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      if (!roles.includes(decoded.role)) {
-        return next(new ApiError(403, "Forbidden: Insufficient permissions'"));
+      console.log("decoded",decoded)
+      if(!roles.includes(decoded.role)){
+        throw new ApiError(403, "Forbidden: Insufficient permissions");
       }
 
-      if (!decoded) {
-        return next(new ApiError(401, "Session expired. Please login again"));
-      }
+      req.user  = decoded
 
-      req.user = decoded;
-
-      next();
+      next()
     } catch (error) {
       next(error);
     }
   };
-};
+}
 
-module.exports = CreateAuthMiddleware;
+module.exports = createAuthMiddleware;
+ 

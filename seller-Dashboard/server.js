@@ -10,7 +10,8 @@ async function startServer (){
 
     await connect(); // RabbitMQ
 
-    await initSubscriber()
+    await initSubscriber();
+    
     app.listen(3008, () => {
       console.log("Server running on port 3008");
     });

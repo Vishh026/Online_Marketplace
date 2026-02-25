@@ -26,8 +26,5 @@ function createAuthMiddleware(roles = ["user"]) {
   };
 }
 
-
-
-
 module.exports = createAuthMiddleware;
  
