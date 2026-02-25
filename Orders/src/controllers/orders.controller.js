@@ -9,6 +9,8 @@ const {
   buildOrderItems,
   clearCart,
 } = require("../Utilities/helper");
+const {publishToQueue} = require('../broker/broker')
+const QUEUES = require('../constants/queues')
 
 const createOrder = async (req, res, next) => {
   const user = req.user;
@@ -35,6 +37,7 @@ const createOrder = async (req, res, next) => {
       shippingAddress: address,
     });
 
+    await publishToQueue(QUEUES.SELLER_ORDER_CREATED,order)
     // Clear cart (do not fail order if this fails)
     try {
       await clearCart(token);

@@ -1,14 +1,26 @@
 require("dotenv").config();
-
-const app = require('./src/app')
+const app = require('./src/app');
+const { connect } = require("./src/broker/broker");
 const connectDb = require("./src/db/db");
 
-connectDb().
-then(() => {
-  console.log("Database connected successfully");
-  app.listen(3004, () => {
-    console.log("server running on port 3004");
-  });
-}).catch((err)=> {
-    console.error("Error in fetching Database: ",err)
-})
+async function startServer(){
+  try{
+     await connectDb();
+    console.log("Database connected successfully");
+
+    await connect(); // RabbitMQ
+
+    app.listen(3003, () => {
+      console.log("Server running on port 3003");
+    });
+  }catch(err){
+    console.error("Startup failed:", err);
+    process.exit(1);
+  }
+}
+
+startServer()
+
+
+
+
