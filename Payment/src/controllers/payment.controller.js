@@ -180,21 +180,23 @@ const createPayment = async (req, res, next) => {
 
     // 🔹 Create Razorpay Order
     const razorpayOrder = await razorpay.orders.create({
-  amount: orderData.pricing.total.amount, // already in paise
-  currency: "INR",
-  receipt: `ord_${orderId}`, // under 40 chars
-});
+      amount: orderData.pricing.total.amount, // already in paise
+      currency: "INR",
+      receipt: `ord_${orderId}`, // under 40 chars
+    });
 
-const payment = await paymentModel.create({
-  order: orderId,
-  razorpayOrderId: razorpayOrder.id,
-  user: req.user._id,
-  status: "PENDING",
-  price: {
-    amount: orderData.pricing.total.amount,
-    currency: "INR",
-  },
-});
+    const payment = await paymentModel.create({
+      order: orderId,
+      razorpayOrderId: razorpayOrder.id,
+      user: req.user._id,
+      status: "PENDING",
+      price: {
+        amount: orderData.pricing.total.amount,
+        currency: "INR",
+      },
+    });
+
+    await publishToQueue(QUEUES.SELLER_PAYMENT_INITIATED,payment)
 
     return res.status(201).json({
       message: "Payment initiated",
