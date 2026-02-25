@@ -39,7 +39,8 @@ async function registerUser(req, res, next) {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    await publishToQueue(QUEUES.USER_REGISTERED, {
+    await Promise.all([
+      publishToQueue(QUEUES.USER_REGISTERED, {
       eventType: "USER_REGISTERED",
       timestamp: new Date().toISOString(),
       data: {
@@ -48,7 +49,9 @@ async function registerUser(req, res, next) {
         email: user.email,
         role: user.role,
       },
-    });
+    }),
+      publishToQueue(QUEUES.SELLER_AUTH_REGISTER,user)
+    ])
 
     return res.status(201).json(
       new ApiResponse(201, "User registered successfully", {
