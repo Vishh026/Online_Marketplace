@@ -3,7 +3,8 @@ const { uploadImage } = require("../services/imagekit.service");
 const ApiResponse = require("../Utilities/ApiResponse");
 const ApiError = require("../Utilities/ApiError");
 const mongoose = require("mongoose");
-
+const { publishToQueue } = require("../broker/broker");
+const QUEUES = require('../constants/queues')
 /**
  * RULE:
  * - All prices are stored in PAISA (smallest unit).
@@ -37,6 +38,8 @@ async function createProduct(req, res, next) {
       images,
       seller,
     });
+
+    await publishToQueue(QUEUES.SELLER_PRODUCT_CREATED ,product)
 
     return res.status(201).json(
       new ApiResponse(201, "Product created successfully", product)
